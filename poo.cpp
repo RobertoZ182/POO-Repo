@@ -201,6 +201,47 @@ int Comanda::totalComenzi = 0;
 
 int main()
 {
+    cout << "=== Domeniu: RESTAURANT (Roberto Zatreanu) ===\n\n";
+
+   
+    Meniu m1;
+    Meniu m2("Pizza Margherita", 28.5);
+    Meniu m3("Paste Carbonara", 35.0, "Fel principal", 3);
+
+    m1.afisare();
+    m2.afisare();
+    m3.afisare();
+
+    cout << "Total produse in meniu: " << Meniu::totalProduse << endl;
+    cout << "Pret redus Pizza: " << Meniu::calculeazaReducere(m2.pret, 10) << " lei\n\n";
+
+
+   
+    Chelner c1;
+    Chelner c2("Ion Popescu", 25);
+    Chelner c3("Maria Ionescu", 30, 202, 4);
+
+    c1.afisare();
+    c2.afisare();
+    c3.afisare();
+
+    cout << "Total chelneri: " << Chelner::totalChelneri << endl;
+    cout << "Bacsis pentru vanzari 1000 lei la 5%: " 
+         << Chelner::calculeazaBacsis(1000, 5) << " lei\n\n";
+
+
+   
+    Comanda o1;
+    Comanda o2(1, 85.0);
+    Comanda o3(2, 120.5, "24/10/2025", 3);
+
+    o1.afisare();
+    o2.afisare();
+    o3.afisare();
+
+    cout << "Total comenzi: " << Comanda::totalComenzi << endl;
+    cout << "Valoare comanda cu TVA 9%: " 
+         << Comanda::adaugaTVA(o3.valoareTotala, 9) << " lei\n";
 
     return 0;
 }
