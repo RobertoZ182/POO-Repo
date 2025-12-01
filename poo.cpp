@@ -70,14 +70,12 @@ public:
         delete[] ingrediente;
     }
 
-    
     Meniu &operator=(const Meniu &other)
     {
         if (this != &other)
         {
             denumire = other.denumire;
             pret = other.pret;
-
 
             delete[] ingrediente;
             nrIngrediente = other.nrIngrediente;
@@ -91,18 +89,16 @@ public:
             {
                 ingrediente = nullptr;
             }
-            
         }
         return *this;
     }
 
     Meniu operator+(const Meniu &other) const
     {
-        Meniu rezultat(*this); // copie
+        Meniu rezultat(*this); 
         rezultat.denumire = denumire + " & " + other.denumire;
         rezultat.pret = pret + other.pret;
 
-        
         int nouNr = nrIngrediente + other.nrIngrediente;
         delete[] rezultat.ingrediente;
         rezultat.nrIngrediente = nouNr;
@@ -124,7 +120,6 @@ public:
         return rezultat;
     }
 
-    
     bool operator<(const Meniu &other) const
     {
         return pret < other.pret;
@@ -136,8 +131,6 @@ public:
             return "Index invalid";
         return ingrediente[index];
     }
-
-    
 
     string getDenumire() const { return denumire; }
     float getPret() const { return pret; }
@@ -191,9 +184,56 @@ public:
     static int getTotalProduse() { return totalProduse; }
 
     friend void aplicaReducere(Meniu &m, int procent);
+
+    friend istream &operator>>(istream &in, Meniu &m);
+    friend ostream &operator<<(ostream &out, const Meniu &m);
 };
 
 int Meniu::totalProduse = 0;
+
+istream &operator>>(istream &in, Meniu &m)
+{
+    cout << "Denumire meniu: ";
+    in >> ws;
+    getline(in, m.denumire);
+
+    cout << "Pret: ";
+    in >> m.pret;
+
+    cout << "Numar ingrediente: ";
+    in >> m.nrIngrediente;
+
+    delete[] m.ingrediente;
+    if (m.nrIngrediente > 0)
+    {
+        m.ingrediente = new string[m.nrIngrediente];
+        in >> ws;
+        for (int i = 0; i < m.nrIngrediente; ++i)
+        {
+            cout << "Ingredient " << i + 1 << ": ";
+            getline(in, m.ingrediente[i]);
+        }
+    }
+    else
+    {
+        m.ingrediente = nullptr;
+    }
+    return in;
+}
+
+ostream &operator<<(ostream &out, const Meniu &m)
+{
+    out << "Meniu: " << m.denumire << " | Pret: " << m.pret
+        << " lei | Tip: " << m.tip << "\n";
+    if (m.ingrediente != nullptr && m.nrIngrediente > 0)
+    {
+        out << "Ingrediente: ";
+        for (int i = 0; i < m.nrIngrediente; ++i)
+            out << m.ingrediente[i] << " ";
+        out << "\n";
+    }
+    return out;
+}
 
 class Chelner
 {
@@ -254,7 +294,6 @@ public:
         delete[] mese;
     }
 
-    
     Chelner &operator=(const Chelner &other)
     {
         if (this != &other)
@@ -274,18 +313,15 @@ public:
             {
                 mese = nullptr;
             }
-          
         }
         return *this;
     }
 
-    
     Chelner &operator++()
     {
         nrMese++;
         return *this;
     }
-
 
     Chelner &operator+=(int meseNoi)
     {
@@ -306,13 +342,10 @@ public:
         return *this;
     }
 
-    
     bool operator<(const Chelner &other) const
     {
         return nrMese < other.nrMese;
     }
-
-
 
     string getNume() const { return nume; }
     int getVarsta() const { return varsta; }
@@ -365,9 +398,58 @@ public:
     }
 
     static int getTotalChelneri() { return totalChelneri; }
+
+    
+    friend istream &operator>>(istream &in, Chelner &c);
+    friend ostream &operator<<(ostream &out, const Chelner &c);
 };
 
 int Chelner::totalChelneri = 0;
+
+istream &operator>>(istream &in, Chelner &c)
+{
+    cout << "Nume chelner: ";
+    in >> ws;
+    getline(in, c.nume);
+
+    cout << "Varsta: ";
+    in >> c.varsta;
+
+    cout << "Numar mese: ";
+    in >> c.nrMese;
+
+    delete[] c.mese;
+    if (c.nrMese > 0)
+    {
+        c.mese = new string[c.nrMese];
+        in >> ws;
+        for (int i = 0; i < c.nrMese; ++i)
+        {
+            cout << "Denumire masa " << i + 1 << ": ";
+            getline(in, c.mese[i]);
+        }
+    }
+    else
+    {
+        c.mese = nullptr;
+    }
+
+    return in;
+}
+
+ostream &operator<<(ostream &out, const Chelner &c)
+{
+    out << "Chelner: " << c.nume << " (" << c.varsta << " ani)"
+        << " | Cod ID: " << c.codID << "\n";
+    if (c.mese != nullptr && c.nrMese > 0)
+    {
+        out << "Mese servite: ";
+        for (int i = 0; i < c.nrMese; ++i)
+            out << c.mese[i] << " ";
+        out << "\n";
+    }
+    return out;
+}
 
 class Comanda
 {
@@ -429,7 +511,6 @@ public:
         delete[] produse;
     }
 
-
     Comanda &operator=(const Comanda &other)
     {
         if (this != &other)
@@ -453,17 +534,15 @@ public:
         return *this;
     }
 
-    
     Comanda &operator+=(float suma)
     {
         valoareTotala += suma;
         return *this;
     }
 
-    
     Comanda operator+(const Comanda &other) const
     {
-        Comanda rezultat(*this); 
+        Comanda rezultat(*this);
         rezultat.valoareTotala = valoareTotala + other.valoareTotala;
 
         int nouNr = nrProduse + other.nrProduse;
@@ -493,8 +572,6 @@ public:
             return "Index invalid";
         return produse[index];
     }
-
-   
 
     int getNrComanda() const { return nrComanda; }
     float getValoareTotala() const { return valoareTotala; }
@@ -549,11 +626,56 @@ public:
     static int getTotalComenzi() { return totalComenzi; }
 
     friend void aplicaTVAlaComanda(Comanda &c, float tva);
+
+    friend istream &operator>>(istream &in, Comanda &c);
+    friend ostream &operator<<(ostream &out, const Comanda &c);
 };
 
 int Comanda::totalComenzi = 0;
 
+istream &operator>>(istream &in, Comanda &c)
+{
+    cout << "Numar comanda: ";
+    in >> c.nrComanda;
 
+    cout << "Valoare totala: ";
+    in >> c.valoareTotala;
+
+    cout << "Numar produse: ";
+    in >> c.nrProduse;
+
+    delete[] c.produse;
+    if (c.nrProduse > 0)
+    {
+        c.produse = new string[c.nrProduse];
+        in >> ws;
+        for (int i = 0; i < c.nrProduse; ++i)
+        {
+            cout << "Produs " << i + 1 << ": ";
+            getline(in, c.produse[i]);
+        }
+    }
+    else
+    {
+        c.produse = nullptr;
+    }
+
+    return in;
+}
+
+ostream &operator<<(ostream &out, const Comanda &c)
+{
+    out << "Comanda #" << c.nrComanda << " | Data: " << c.dataComenzii
+        << " | Valoare: " << c.valoareTotala << " lei\n";
+    if (c.produse != nullptr && c.nrProduse > 0)
+    {
+        out << "Produse: ";
+        for (int i = 0; i < c.nrProduse; ++i)
+            out << c.produse[i] << " ";
+        out << "\n";
+    }
+    return out;
+}
 
 void aplicaReducere(Meniu &m, int procent)
 {
@@ -564,8 +686,6 @@ void aplicaTVAlaComanda(Comanda &c, float tva)
 {
     c.valoareTotala = Comanda::adaugaTVA(c.valoareTotala, tva);
 }
-
-
 
 int main()
 {
@@ -585,7 +705,6 @@ int main()
     cout << "Pret redus Pizza (10% calculat static, fara a modifica obiectul): "
          << Meniu::calculeazaReducere(m2.getPret(), 10) << " lei\n\n";
 
-    
     aplicaReducere(m2, 10);
     cout << "Pret Pizza dupa aplicare reducere 10% (aplicata prin functie prietena): "
          << m2.getPret() << " lei\n\n";
@@ -624,12 +743,10 @@ int main()
     cout << "Total comenzi: " << Comanda::getTotalComenzi() << endl;
     cout << "Valoare comanda o3 (getter): " << o3.getValoareTotala() << " lei\n";
 
-    
     aplicaTVAlaComanda(o3, 9.0f);
     cout << "Valoare comanda o3 dupa aplicare TVA 9% (functie prietena): "
          << o3.getValoareTotala() << " lei\n\n";
 
-    
     Meniu m2copy = m2;
     cout << "Meniu copiat (m2copy) - afisare (s-a realizat deep copy):\n";
     m2copy.afisare();
@@ -651,13 +768,12 @@ int main()
     cout << "Dupa setValoareTotala(o3): o3 = " << o3.getValoareTotala()
          << " | o3copy = " << o3copy.getValoareTotala() << "\n\n";
 
-    
     cout << "\n--- Testare operatori Meniu ---\n";
-    m1 = m3; 
+    m1 = m3;
     cout << "Dupa m1 = m3, m1 devine:\n";
     m1.afisare();
 
-    Meniu combo = m2 + m3; 
+    Meniu combo = m2 + m3;
     cout << "Meniu combo (m2 + m3):\n";
     combo.afisare();
 
@@ -665,25 +781,23 @@ int main()
 
     cout << "Primul ingredient din m3 (operator[]): " << m3[0] << "\n\n";
 
-   
     cout << "--- Testare operatori Chelner ---\n";
-    c1 = c2; 
+    c1 = c2;
     cout << "Dupa c1 = c2:\n";
     c1.afisare();
 
-    ++c2; 
+    ++c2;
     cout << "Dupa ++c2 (creste nrMese):\n";
     c2.afisare();
 
-    c2 += 2; 
+    c2 += 2;
     cout << "Dupa c2 += 2 (i se mai atribuie 2 mese):\n";
     c2.afisare();
 
     cout << "Comparatie nrMese (c2 < c3): " << (c2 < c3 ? "DA" : "NU") << "\n\n";
 
-    
     cout << "--- Testare operatori Comanda ---\n";
-    o1 = o2; 
+    o1 = o2;
     cout << "Dupa o1 = o2:\n";
     o1.afisare();
 
@@ -691,13 +805,103 @@ int main()
     cout << "Dupa o2 += 20 (valoare suplimentara):\n";
     o2.afisare();
 
-    Comanda oSum = o2 + o3; 
+    Comanda oSum = o2 + o3;
     cout << "Comanda combinata (o2 + o3):\n";
     oSum.afisare();
 
     cout << "Primul produs din o3 (operator[]): " << o3[0] << "\n";
 
-    cout << "\n=== Sfarsit testare ===\n";
+    cout << "\n=== Sfarsit testare initiala ===\n\n";
+
+    cout << "=== Citire vectori de obiecte de la tastatura ===\n\n";
+
+    int nM, nC, nO;
+
+    cout << "Numar obiecte Meniu: ";
+    cin >> nM;
+    vector<Meniu> vM(nM);
+    for (int i = 0; i < nM; ++i)
+    {
+        cout << "\n--- Meniu " << i + 1 << " ---\n";
+        cin >> vM[i];
+    }
+
+    cout << "\nMeniuri citite:\n";
+    for (int i = 0; i < nM; ++i)
+    {
+        cout << "Meniu [" << i << "]:\n";
+        cout << vM[i] << "\n";
+    }
+
+    cout << "\nNumar obiecte Chelner: ";
+    cin >> nC;
+    vector<Chelner> vC(nC);
+    for (int i = 0; i < nC; ++i)
+    {
+        cout << "\n--- Chelner " << i + 1 << " ---\n";
+        cin >> vC[i];
+    }
+
+    cout << "\nChelneri cititi:\n";
+    for (int i = 0; i < nC; ++i)
+    {
+        cout << "Chelner [" << i << "]:\n";
+        cout << vC[i] << "\n";
+    }
+
+    cout << "\nNumar obiecte Comanda: ";
+    cin >> nO;
+    vector<Comanda> vO(nO);
+    for (int i = 0; i < nO; ++i)
+    {
+        cout << "\n--- Comanda " << i + 1 << " ---\n";
+        cin >> vO[i];
+    }
+
+    cout << "\nComenzi citite:\n";
+    for (int i = 0; i < nO; ++i)
+    {
+        cout << "Comanda [" << i << "]:\n";
+        cout << vO[i] << "\n";
+    }
+
+    cout << "\n=== Matrice de obiecte de tip Comanda ===\n";
+
+    int L, C;
+    cout << "Numar linii matrice: ";
+    cin >> L;
+    cout << "Numar coloane matrice: ";
+    cin >> C;
+
+    Comanda **mat = new Comanda *[L];
+    for (int i = 0; i < L; ++i)
+        mat[i] = new Comanda[C];
+
+    cout << "\n--- Citire elemente matrice ---\n";
+    for (int i = 0; i < L; ++i)
+    {
+        for (int j = 0; j < C; ++j)
+        {
+            cout << "\nComanda de pe pozitia [" << i << "][" << j << "]:\n";
+            cin >> mat[i][j];
+        }
+    }
+
+    cout << "\n--- Afisare matrice comenzi ---\n";
+    for (int i = 0; i < L; ++i)
+    {
+        for (int j = 0; j < C; ++j)
+        {
+            cout << "Comanda [" << i << "][" << j << "]:\n";
+            cout << mat[i][j] << "\n";
+        }
+    }
+
+   
+    for (int i = 0; i < L; ++i)
+        delete[] mat[i];
+    delete[] mat;
+
+    cout << "\n=== Sfarsit testare completa ===\n";
     return 0;
 }
-
