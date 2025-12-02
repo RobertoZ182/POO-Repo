@@ -687,6 +687,263 @@ void aplicaTVAlaComanda(Comanda &c, float tva)
     c.valoareTotala = Comanda::adaugaTVA(c.valoareTotala, tva);
 }
 
+class Masa
+{
+private:
+    int nrMasa;
+    int nrLocuri;
+    Chelner chelner;      // HAS-A cu Chelner
+    int nrComenzi;
+    Comanda *comenzi;     // HAS-A cu Comanda (vector dinamic)
+    static int totalMese;
+
+public:
+    // Constructor default
+    Masa() : nrMasa(0), nrLocuri(0), chelner(), nrComenzi(0), comenzi(nullptr)
+    {
+        totalMese++;
+    }
+
+    // Constructor cu masa + locuri + chelner (fara comenzi initiale)
+    Masa(int nr, int locuri, const Chelner &ch)
+        : nrMasa(nr), nrLocuri(locuri), chelner(ch), nrComenzi(0), comenzi(nullptr)
+    {
+        totalMese++;
+    }
+
+    // Constructor complet cu vector de comenzi
+    Masa(int nr, int locuri, const Chelner &ch, int nCom, const Comanda *vComenzi = nullptr)
+        : nrMasa(nr), nrLocuri(locuri), chelner(ch), nrComenzi(nCom)
+    {
+        if (nrComenzi > 0)
+        {
+            comenzi = new Comanda[nrComenzi];
+            if (vComenzi != nullptr)
+            {
+                for (int i = 0; i < nrComenzi; ++i)
+                    comenzi[i] = vComenzi[i];
+            }
+            else
+            {
+                // Daca nu primim vector, initializam comenzi generice
+                for (int i = 0; i < nrComenzi; ++i)
+                    comenzi[i] = Comanda(i + 1, 0.0f);
+            }
+        }
+        else
+        {
+            comenzi = nullptr;
+        }
+        totalMese++;
+    }
+
+    // Constructor de copiere (deep copy)
+    Masa(const Masa &other)
+        : nrMasa(other.nrMasa), nrLocuri(other.nrLocuri),
+          chelner(other.chelner), nrComenzi(other.nrComenzi)
+    {
+        if (nrComenzi > 0)
+        {
+            comenzi = new Comanda[nrComenzi];
+            for (int i = 0; i < nrComenzi; ++i)
+                comenzi[i] = other.comenzi[i];
+        }
+        else
+        {
+            comenzi = nullptr;
+        }
+        totalMese++;
+    }
+
+    // Destructor
+    ~Masa()
+    {
+        delete[] comenzi;
+    }
+
+    // Operator de atribuire (deep copy)
+    Masa &operator=(const Masa &other)
+    {
+        if (this != &other)
+        {
+            nrMasa = other.nrMasa;
+            nrLocuri = other.nrLocuri;
+            chelner = other.chelner;
+
+            delete[] comenzi;
+            nrComenzi = other.nrComenzi;
+            if (nrComenzi > 0)
+            {
+                comenzi = new Comanda[nrComenzi];
+                for (int i = 0; i < nrComenzi; ++i)
+                    comenzi[i] = other.comenzi[i];
+            }
+            else
+            {
+                comenzi = nullptr;
+            }
+        }
+        return *this;
+    }
+
+    // === OPERATORI ceruti ===
+
+    // 1) Adaugare comanda la masa (REALLOCARE vector)
+    Masa &operator+=(const Comanda &c)
+    {
+        Comanda *nou = new Comanda[nrComenzi + 1];
+        for (int i = 0; i < nrComenzi; ++i)
+            nou[i] = comenzi[i];
+        nou[nrComenzi] = c;
+
+        delete[] comenzi;
+        comenzi = nou;
+        nrComenzi++;
+        return *this;
+    }
+
+    // 2) Comparatie intre doua mese (dupa numarul de locuri)
+    bool operator<(const Masa &other) const
+    {
+        return nrLocuri < other.nrLocuri;
+    }
+
+    // 3) Acces comanda de pe masa prin index
+    Comanda operator[](int index) const
+    {
+        if (index < 0 || index >= nrComenzi || comenzi == nullptr)
+        {
+            // daca index invalid, returnam o comanda "goala"
+            return Comanda();
+        }
+        return comenzi[index];
+    }
+
+    // === GETERI ===
+    int getNrMasa() const { return nrMasa; }
+    int getNrLocuri() const { return nrLocuri; }
+    int getNrComenzi() const { return nrComenzi; }
+    Chelner getChelner() const { return chelner; }
+
+    vector<Comanda> getComenzi() const
+    {
+        vector<Comanda> v;
+        for (int i = 0; i < nrComenzi; ++i)
+            v.push_back(comenzi[i]);
+        return v;
+    }
+
+    // === SETERI ===
+    void setNrMasa(int nr) { nrMasa = nr; }
+    void setNrLocuri(int loc) { nrLocuri = loc; }
+    void setChelner(const Chelner &ch) { chelner = ch; }
+
+    void setComenziFromVector(const vector<Comanda> &v)
+    {
+        delete[] comenzi;
+        nrComenzi = static_cast<int>(v.size());
+        if (nrComenzi > 0)
+        {
+            comenzi = new Comanda[nrComenzi];
+            for (int i = 0; i < nrComenzi; ++i)
+                comenzi[i] = v[i];
+        }
+        else
+        {
+            comenzi = nullptr;
+        }
+    }
+
+    // Metoda specifica: totalul tuturor comenzilor de pe masa
+    float calculeazaTotalMasa() const
+    {
+        float s = 0.0f;
+        for (int i = 0; i < nrComenzi; ++i)
+            s += comenzi[i].getValoareTotala();
+        return s;
+    }
+
+    // Afisare
+    void afisare() const
+    {
+        cout << "Masa #" << nrMasa << " | Locuri: " << nrLocuri << endl;
+        cout << "Chelner asignat:\n";
+        chelner.afisare();
+        cout << "Numar comenzi: " << nrComenzi
+             << " | Total masa: " << calculeazaTotalMasa() << " lei\n";
+        if (comenzi != nullptr && nrComenzi > 0)
+        {
+            cout << "Comenzi pe masa:\n";
+            for (int i = 0; i < nrComenzi; ++i)
+            {
+                cout << " - Comanda [" << i << "]:\n";
+                cout << comenzi[i];
+            }
+        }
+        cout << endl;
+    }
+
+    static int getTotalMese() { return totalMese; }
+
+    // Friend I/O
+    friend istream &operator>>(istream &in, Masa &m);
+    friend ostream &operator<<(ostream &out, const Masa &m);
+};
+
+int Masa::totalMese = 0;
+
+istream &operator>>(istream &in, Masa &m)
+{
+    cout << "Numar masa: ";
+    in >> m.nrMasa;
+
+    cout << "Numar locuri: ";
+    in >> m.nrLocuri;
+
+    cout << "\n--- Date chelner pentru aceasta masa ---\n";
+    in >> m.chelner;
+
+    cout << "Numar comenzi pe aceasta masa: ";
+    in >> m.nrComenzi;
+
+    delete[] m.comenzi;
+    if (m.nrComenzi > 0)
+    {
+        m.comenzi = new Comanda[m.nrComenzi];
+        for (int i = 0; i < m.nrComenzi; ++i)
+        {
+            cout << "\nComanda " << i + 1 << " pentru masa:\n";
+            in >> m.comenzi[i];
+        }
+    }
+    else
+    {
+        m.comenzi = nullptr;
+    }
+
+    return in;
+}
+
+ostream &operator<<(ostream &out, const Masa &m)
+{
+    out << "Masa #" << m.nrMasa << " | Locuri: " << m.nrLocuri << "\n";
+    out << "Chelner asignat:\n";
+    out << m.chelner;
+    out << "Numar comenzi: " << m.nrComenzi
+        << " | Total masa: " << m.calculeazaTotalMasa() << " lei\n";
+    if (m.comenzi != nullptr && m.nrComenzi > 0)
+    {
+        out << "Comenzi pe masa:\n";
+        for (int i = 0; i < m.nrComenzi; ++i)
+        {
+            out << "   Comanda [" << i << "]:\n";
+            out << m.comenzi[i];
+        }
+    }
+    out << "\n";
+    return out;
+}
+
 int main()
 {
     cout << "=== Domeniu: RESTAURANT (Roberto Zatreanu) - Tema modificata ===\n\n";
