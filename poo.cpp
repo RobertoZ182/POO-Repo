@@ -1003,6 +1003,27 @@ int main()
     aplicaTVAlaComanda(o3, 9.0f);
     cout << "Valoare comanda o3 dupa aplicare TVA 9% (functie prietena): "
          << o3.getValoareTotala() << " lei\n\n";
+        cout << "\n=== Testare clasa Masa (FAZA 5) ===\n";
+
+    Masa masa1;                      
+    Masa masa2(10, 4, c2);           
+
+    masa2 += o2;
+    masa2 += o3;
+
+    cout << "Masa2 (dupa 2 comenzi adaugate):\n";
+    cout << masa2 << "\n";
+
+    
+    Comanda prima = masa2[0];
+    cout << "Prima comanda de pe masa2 are valoarea: "
+         << prima.getValoareTotala() << " lei\n";
+
+    Masa masa3(11, 6, c3);
+    cout << "Comparatie (masa2 < masa3 dupa nrLocuri): "
+         << (masa2 < masa3 ? "DA" : "NU") << "\n";
+
+    cout << "Total mese create: " << Masa::getTotalMese() << "\n\n";
 
     Meniu m2copy = m2;
     cout << "Meniu copiat (m2copy) - afisare (s-a realizat deep copy):\n";
