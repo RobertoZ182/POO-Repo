@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
@@ -65,7 +66,7 @@ public:
         totalProduse++;
     }
 
-    ~Meniu()
+    virtual ~Meniu()
     {
         delete[] ingrediente;
     }
@@ -168,7 +169,7 @@ public:
         return pret - (pret * procent / 100.0f);
     }
 
-    void afisare() const
+    virtual void afisare() const
     {
         cout << "Meniu: " << denumire << " | Pret: " << pret << " lei | Tip: " << tip << endl;
         if (ingrediente != nullptr && nrIngrediente > 0)
@@ -180,6 +181,12 @@ public:
         }
         cout << endl;
     }
+       
+    void scrieInFisierText(ofstream &out) const;
+    static Meniu citesteDinFisierText(ifstream &in);
+
+    void scrieInFisierBinar(ofstream &out) const;
+    static Meniu citesteDinFisierBinar(ifstream &in);
 
     static int getTotalProduse() { return totalProduse; }
 
@@ -187,6 +194,117 @@ public:
 
     friend istream &operator>>(istream &in, Meniu &m);
     friend ostream &operator<<(ostream &out, const Meniu &m);
+
+    void Meniu::scrieInFisierText(ofstream &out) const
+{
+    // format simplu, pe mai multe linii
+    out << denumire << '\n';
+    out << pret << '\n';
+    out << tip << '\n';
+    out << nrIngrediente << '\n';
+    for (int i = 0; i < nrIngrediente; ++i)
+        out << ingrediente[i] << '\n';
+}
+
+Meniu Meniu::citesteDinFisierText(ifstream &in)
+{
+    string den, tipM, linie;
+    float p;
+    int nIng;
+
+    if (!getline(in, den))
+        return Meniu(); // EOF sau eroare
+
+    if (!getline(in, linie))
+        return Meniu();
+    p = stof(linie);
+
+    if (!getline(in, tipM))
+        return Meniu();
+
+    if (!getline(in, linie))
+        return Meniu();
+    nIng = stoi(linie);
+
+    vector<string> ing;
+    for (int i = 0; i < nIng; ++i)
+    {
+        string s;
+        if (!getline(in, s))
+            s = "";
+        ing.push_back(s);
+    }
+
+    Meniu m(den, p, tipM, nIng);
+    m.setIngredienteFromVector(ing);
+    return m;
+}
+
+void Meniu::scrieInFisierBinar(ofstream &out) const
+{
+    size_t len;
+
+    // denumire
+    len = denumire.size();
+    out.write(reinterpret_cast<const char*>(&len), sizeof(len));
+    out.write(denumire.c_str(), len);
+
+    // pret
+    out.write(reinterpret_cast<const char*>(&pret), sizeof(pret));
+
+    // tip
+    string tipLocal = tip;
+    len = tipLocal.size();
+    out.write(reinterpret_cast<const char*>(&len), sizeof(len));
+    out.write(tipLocal.c_str(), len);
+
+    // nrIngrediente
+    out.write(reinterpret_cast<const char*>(&nrIngrediente), sizeof(nrIngrediente));
+
+    // ingrediente
+    for (int i = 0; i < nrIngrediente; ++i)
+    {
+        len = ingrediente[i].size();
+        out.write(reinterpret_cast<const char*>(&len), sizeof(len));
+        out.write(ingrediente[i].c_str(), len);
+    }
+}
+
+Meniu Meniu::citesteDinFisierBinar(ifstream &in)
+{
+    size_t len;
+    string den, tipM;
+    float p;
+    int nIng;
+
+    if (!in.read(reinterpret_cast<char*>(&len), sizeof(len)))
+        return Meniu();
+    den.resize(len);
+    in.read(&den[0], len);
+
+    in.read(reinterpret_cast<char*>(&p), sizeof(p));
+
+    in.read(reinterpret_cast<char*>(&len), sizeof(len));
+    tipM.resize(len);
+    in.read(&tipM[0], len);
+
+    in.read(reinterpret_cast<char*>(&nIng), sizeof(nIng));
+
+    vector<string> ing;
+    for (int i = 0; i < nIng; ++i)
+    {
+        in.read(reinterpret_cast<char*>(&len), sizeof(len));
+        string s;
+        s.resize(len);
+        in.read(&s[0], len);
+        ing.push_back(s);
+    }
+
+    Meniu m(den, p, tipM, nIng);
+    m.setIngredienteFromVector(ing);
+    return m;
+}
+
 };
 
 int Meniu::totalProduse = 0;
@@ -234,6 +352,54 @@ ostream &operator<<(ostream &out, const Meniu &m)
     }
     return out;
 }
+class MeniuBauturi : public Meniu
+{
+private:
+    bool alcoolic;
+    float volumMl;
+    string categorie;   
+
+public:
+    MeniuBauturi()
+        : Meniu("Bautura necunoscuta", 0.0f, "Bautura", 0),
+          alcoolic(false), volumMl(0.0f), categorie("Necunoscuta")
+    {
+    }
+
+    MeniuBauturi(const string &den, float pret,
+                 bool alc, float volum, const string &cat)
+        : Meniu(den, pret, "Bautura", 0),
+          alcoolic(alc), volumMl(volum), categorie(cat)
+    {
+    }
+
+    
+    bool getAlcoolic() const { return alcoolic; }
+    float getVolumMl() const { return volumMl; }
+    string getCategorie() const { return categorie; }
+
+    
+    void setAlcoolic(bool a) { alcoolic = a; }
+    void setVolumMl(float v) { volumMl = v; }
+    void setCategorie(const string &c) { categorie = c; }
+
+    void descriereScurta() const
+    {
+        cout << "Bautura " << getDenumire()
+             << " (" << volumMl << " ml, "
+             << (alcoolic ? "alcoolica" : "nealcoolica")
+             << ", " << categorie << ")\n";
+    }
+
+    void afisare() const override
+    {
+        Meniu::afisare();
+        cout << "Detalii bautura: "
+             << (alcoolic ? "alcoolica" : "nealcoolica")
+             << ", volum: " << volumMl << " ml"
+             << ", categorie: " << categorie << "\n\n";
+    }
+};
 
 class Chelner
 {
@@ -289,7 +455,7 @@ public:
         totalChelneri++;
     }
 
-    ~Chelner()
+    virtual ~Chelner()
     {
         delete[] mese;
     }
@@ -383,7 +549,7 @@ public:
         return totalVanzari * procent / 100.0f;
     }
 
-    void afisare() const
+    virtual void afisare() const
     {
         cout << "Chelner: " << nume << " (" << varsta << " ani)"
              << " | Cod ID: " << codID << endl;
@@ -450,6 +616,48 @@ ostream &operator<<(ostream &out, const Chelner &c)
     }
     return out;
 }
+class ChelnerSef : public Chelner
+{
+private:
+    int nrSubordonati;
+    float bonusFix;
+    string zona;   
+
+public:
+    ChelnerSef()
+        : Chelner("Sef necunoscut", 0, 999, 0),
+          nrSubordonati(0), bonusFix(0.0f), zona("N/A")
+    {
+    }
+
+    ChelnerSef(const string &n, int v, int cod, int nrMese,
+               int nrSub, float bonus, const string &z)
+        : Chelner(n, v, cod, nrMese),
+          nrSubordonati(nrSub), bonusFix(bonus), zona(z)
+    {
+    }
+
+    int getNrSubordonati() const { return nrSubordonati; }
+    float getBonusFix() const { return bonusFix; }
+    string getZona() const { return zona; }
+
+    void setNrSubordonati(int nr) { nrSubordonati = nr; }
+    void setBonusFix(float b) { bonusFix = b; }
+    void setZona(const string &z) { zona = z; }
+
+    float calculeazaVenitTotal(float salariuBaza) const
+    {
+        return salariuBaza + bonusFix;
+    }
+
+    void afisare() const override
+    {
+        Chelner::afisare();
+        cout << "   (Sef de sala) Subordonati: " << nrSubordonati
+             << " | Bonus fix: " << bonusFix
+             << " lei | Zona: " << zona << "\n\n";
+    }
+};
 
 class Comanda
 {
@@ -623,12 +831,126 @@ public:
         cout << endl;
     }
 
+        
+    void scrieInFisierText(ofstream &out) const;
+    static Comanda citesteDinFisierText(ifstream &in);
+
+    void scrieInFisierBinar(ofstream &out) const;
+    static Comanda citesteDinFisierBinar(ifstream &in);
+
+
     static int getTotalComenzi() { return totalComenzi; }
 
     friend void aplicaTVAlaComanda(Comanda &c, float tva);
 
     friend istream &operator>>(istream &in, Comanda &c);
     friend ostream &operator<<(ostream &out, const Comanda &c);
+
+    void Comanda::scrieInFisierText(ofstream &out) const
+{
+    out << nrComanda << '\n';
+    out << valoareTotala << '\n';
+    out << dataComenzii << '\n';
+    out << nrProduse << '\n';
+    for (int i = 0; i < nrProduse; ++i)
+        out << produse[i] << '\n';
+}
+
+Comanda Comanda::citesteDinFisierText(ifstream &in)
+{
+    string linie, data;
+    int nr, nProd;
+    float val;
+
+    if (!getline(in, linie))
+        return Comanda();
+    nr = stoi(linie);
+
+    if (!getline(in, linie))
+        return Comanda();
+    val = stof(linie);
+
+    if (!getline(in, data))
+        return Comanda();
+
+    if (!getline(in, linie))
+        return Comanda();
+    nProd = stoi(linie);
+
+    vector<string> prod;
+    for (int i = 0; i < nProd; ++i)
+    {
+        string s;
+        if (!getline(in, s))
+            s = "";
+        prod.push_back(s);
+    }
+
+    Comanda c(nr, val, data, nProd);
+    c.setProduseFromVector(prod);
+    return c;
+}
+
+void Comanda::scrieInFisierBinar(ofstream &out) const
+{
+    size_t len;
+
+    // nrComanda
+    out.write(reinterpret_cast<const char*>(&nrComanda), sizeof(nrComanda));
+
+    // valoareTotala
+    out.write(reinterpret_cast<const char*>(&valoareTotala), sizeof(valoareTotala));
+
+    // dataComenzii
+    len = dataComenzii.size();
+    out.write(reinterpret_cast<const char*>(&len), sizeof(len));
+    out.write(dataComenzii.c_str(), len);
+
+    // nrProduse
+    out.write(reinterpret_cast<const char*>(&nrProduse), sizeof(nrProduse));
+
+    // produse
+    for (int i = 0; i < nrProduse; ++i)
+    {
+        len = produse[i].size();
+        out.write(reinterpret_cast<const char*>(&len), sizeof(len));
+        out.write(produse[i].c_str(), len);
+    }
+}
+
+Comanda Comanda::citesteDinFisierBinar(ifstream &in)
+{
+    size_t len;
+    int nr, nProd;
+    float val;
+    string data;
+
+    if (!in.read(reinterpret_cast<char*>(&nr), sizeof(nr)))
+        return Comanda();
+
+    in.read(reinterpret_cast<char*>(&val), sizeof(val));
+
+    in.read(reinterpret_cast<char*>(&len), sizeof(len));
+    data.resize(len);
+    in.read(&data[0], len);
+
+    in.read(reinterpret_cast<char*>(&nProd), sizeof(nProd));
+
+    vector<string> prod;
+    for (int i = 0; i < nProd; ++i)
+    {
+        in.read(reinterpret_cast<char*>(&len), sizeof(len));
+        string s;
+        s.resize(len);
+        in.read(&s[0], len);
+        prod.push_back(s);
+    }
+
+    Comanda c(nr, val, data, nProd);
+    c.setProduseFromVector(prod);
+    return c;
+}
+
 };
 
 int Comanda::totalComenzi = 0;
@@ -692,26 +1014,26 @@ class Masa
 private:
     int nrMasa;
     int nrLocuri;
-    Chelner chelner;      // HAS-A cu Chelner
+    Chelner chelner;     
     int nrComenzi;
-    Comanda *comenzi;     // HAS-A cu Comanda (vector dinamic)
+    Comanda *comenzi;     
     static int totalMese;
 
 public:
-    // Constructor default
+   
     Masa() : nrMasa(0), nrLocuri(0), chelner(), nrComenzi(0), comenzi(nullptr)
     {
         totalMese++;
     }
 
-    // Constructor cu masa + locuri + chelner (fara comenzi initiale)
+
     Masa(int nr, int locuri, const Chelner &ch)
         : nrMasa(nr), nrLocuri(locuri), chelner(ch), nrComenzi(0), comenzi(nullptr)
     {
         totalMese++;
     }
 
-    // Constructor complet cu vector de comenzi
+   
     Masa(int nr, int locuri, const Chelner &ch, int nCom, const Comanda *vComenzi = nullptr)
         : nrMasa(nr), nrLocuri(locuri), chelner(ch), nrComenzi(nCom)
     {
@@ -725,7 +1047,7 @@ public:
             }
             else
             {
-                // Daca nu primim vector, initializam comenzi generice
+                
                 for (int i = 0; i < nrComenzi; ++i)
                     comenzi[i] = Comanda(i + 1, 0.0f);
             }
@@ -737,7 +1059,6 @@ public:
         totalMese++;
     }
 
-    // Constructor de copiere (deep copy)
     Masa(const Masa &other)
         : nrMasa(other.nrMasa), nrLocuri(other.nrLocuri),
           chelner(other.chelner), nrComenzi(other.nrComenzi)
@@ -755,13 +1076,12 @@ public:
         totalMese++;
     }
 
-    // Destructor
     ~Masa()
     {
         delete[] comenzi;
     }
 
-    // Operator de atribuire (deep copy)
+   
     Masa &operator=(const Masa &other)
     {
         if (this != &other)
@@ -786,9 +1106,7 @@ public:
         return *this;
     }
 
-    // === OPERATORI ceruti ===
-
-    // 1) Adaugare comanda la masa (REALLOCARE vector)
+   
     Masa &operator+=(const Comanda &c)
     {
         Comanda *nou = new Comanda[nrComenzi + 1];
@@ -802,24 +1120,22 @@ public:
         return *this;
     }
 
-    // 2) Comparatie intre doua mese (dupa numarul de locuri)
     bool operator<(const Masa &other) const
     {
         return nrLocuri < other.nrLocuri;
     }
 
-    // 3) Acces comanda de pe masa prin index
+   
     Comanda operator[](int index) const
     {
         if (index < 0 || index >= nrComenzi || comenzi == nullptr)
         {
-            // daca index invalid, returnam o comanda "goala"
+          
             return Comanda();
         }
         return comenzi[index];
     }
 
-    // === GETERI ===
     int getNrMasa() const { return nrMasa; }
     int getNrLocuri() const { return nrLocuri; }
     int getNrComenzi() const { return nrComenzi; }
@@ -854,7 +1170,6 @@ public:
         }
     }
 
-    // Metoda specifica: totalul tuturor comenzilor de pe masa
     float calculeazaTotalMasa() const
     {
         float s = 0.0f;
@@ -863,7 +1178,7 @@ public:
         return s;
     }
 
-    // Afisare
+ 
     void afisare() const
     {
         cout << "Masa #" << nrMasa << " | Locuri: " << nrLocuri << endl;
@@ -885,7 +1200,7 @@ public:
 
     static int getTotalMese() { return totalMese; }
 
-    // Friend I/O
+   
     friend istream &operator>>(istream &in, Masa &m);
     friend ostream &operator<<(ostream &out, const Masa &m);
 };
@@ -1179,6 +1494,105 @@ int main()
     for (int i = 0; i < L; ++i)
         delete[] mat[i];
     delete[] mat;
+
+        cout << "\n=== Testare clase derivate (MeniuBauturi, ChelnerSef) ===\n";
+
+    MeniuBauturi b1;
+    MeniuBauturi b2("Coca-Cola", 8.5f, false, 500.0f, "Racoritoare");
+    MeniuBauturi b3("Vin rosu house", 15.0f, true, 150.0f, "Vin");
+
+    cout << "Afisare bauturi (obiecte derivate direct):\n";
+    b1.afisare();
+    b2.afisare();
+    b3.afisare();
+
+    b2.descriereScurta();
+    b3.descriereScurta();
+    cout << "\n";
+
+    ChelnerSef sef1;
+    ChelnerSef sef2("Gheorghe Pop", 40, 301, 5, 3, 500.0f, "Terasa");
+
+    cout << "Afisare chelneri sefi (obiecte derivate direct):\n";
+    sef1.afisare();
+    sef2.afisare();
+
+    cout << "Venit total sef2 la salariu baza 3000: "
+         << sef2.calculeazaVenitTotal(3000.0f) << " lei\n\n";
+
+    cout << "--- Upcasting ---\n";
+
+    Meniu *pMeniuBautura = &b2;
+    Chelner *pChelnerSef = &sef2;
+
+    cout << "Afisare prin pointer Meniu* care pointeaza la MeniuBauturi:\n";
+    pMeniuBautura->afisare();   
+
+    cout << "Afisare prin pointer Chelner* care pointeaza la ChelnerSef:\n";
+    pChelnerSef->afisare();     
+
+    cout << "Pret bautura (accesat prin pointer la baza): "
+         << pMeniuBautura->getPret() << " lei\n";
+    cout << "Nume chelner sef (accesat prin pointer la baza): "
+         << pChelnerSef->getNume() << "\n\n";
+
+             cout << "\n=== Testare fisiere text si binare (Meniu, Comanda) ===\n";
+
+    // --- FISIERE TEXT ---
+    {
+        ofstream fout("meniu_comanda.txt");
+        if (fout)
+        {
+            m2.scrieInFisierText(fout);
+            m3.scrieInFisierText(fout);
+            o2.scrieInFisierText(fout);
+            o3.scrieInFisierText(fout);
+        }
+        fout.close();
+
+        ifstream fin("meniu_comanda.txt");
+        if (fin)
+        {
+            cout << "\nCitire din fisier text:\n";
+            Meniu fm1 = Meniu::citesteDinFisierText(fin);
+            Meniu fm2 = Meniu::citesteDinFisierText(fin);
+            Comanda fc1 = Comanda::citesteDinFisierText(fin);
+            Comanda fc2 = Comanda::citesteDinFisierText(fin);
+
+            cout << "Meniu din fisier 1:\n"; fm1.afisare();
+            cout << "Meniu din fisier 2:\n"; fm2.afisare();
+            cout << "Comanda din fisier 1:\n"; fc1.afisare();
+            cout << "Comanda din fisier 2:\n"; fc2.afisare();
+        }
+    }
+
+    // --- FISIERE BINARE ---
+    {
+        ofstream foutb("meniu_comanda.bin", ios::binary);
+        if (foutb)
+        {
+            m2.scrieInFisierBinar(foutb);
+            m3.scrieInFisierBinar(foutb);
+            o2.scrieInFisierBinar(foutb);
+            o3.scrieInFisierBinar(foutb);
+        }
+        foutb.close();
+
+        ifstream finb("meniu_comanda.bin", ios::binary);
+        if (finb)
+        {
+            cout << "\nCitire din fisier binar:\n";
+            Meniu bm1 = Meniu::citesteDinFisierBinar(finb);
+            Meniu bm2 = Meniu::citesteDinFisierBinar(finb);
+            Comanda bc1 = Comanda::citesteDinFisierBinar(finb);
+            Comanda bc2 = Comanda::citesteDinFisierBinar(finb);
+
+            cout << "Meniu binar 1:\n"; bm1.afisare();
+            cout << "Meniu binar 2:\n"; bm2.afisare();
+            cout << "Comanda binar 1:\n"; bc1.afisare();
+            cout << "Comanda binar 2:\n"; bc2.afisare();
+        }
+    }
 
     cout << "\n=== Sfarsit testare completa ===\n";
     return 0;
